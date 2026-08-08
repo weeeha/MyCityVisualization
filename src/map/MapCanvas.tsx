@@ -8,7 +8,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { MapboxOverlay } from '@deck.gl/mapbox';
 import type { Layer as DeckLayer } from '@deck.gl/core';
 import type { BasemapPatch, ViewState } from '@/src/layers/types';
-import { BASEMAP_STYLE_URL, applyPatch } from './basemap';
+import { BASEMAP_STYLE_URL, applyPatch, ensureBuildingLayer } from './basemap';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 interface Props {
@@ -63,6 +63,15 @@ export default function MapCanvas({
     // camera, and buildings correctly occlude data.
     const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
     map.addControl(overlay);
+
+    // The dark basemap style ships no 3D building layer — add ours once the
+    // style is ready. ensureBuildingLayer is idempotent, so it's safe to
+    // wire to both 'load' (first paint) and 'styledata' (fires again on any
+    // later style reload) without ever adding the layer twice.
+    map.on('load', () => ensureBuildingLayer(map));
+    map.on('styledata', () => {
+      if (map.isStyleLoaded()) ensureBuildingLayer(map);
+    });
 
     // Defensive: if the container is still 0×0 at construction (observed in
     // practice right after this dynamically-imported component's first
