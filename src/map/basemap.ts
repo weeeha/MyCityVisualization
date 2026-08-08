@@ -19,9 +19,9 @@ export function applyPatch(map: MapLibreMap, patch: BasemapPatch): void {
   for (const [prop, value] of Object.entries(patch.paint)) {
     const key = `${patch.layerId}::${prop}`;
     if (!originals.has(key)) {
-      originals.set(key, map.getPaintProperty(patch.layerId, prop as never));
+      originals.set(key, map.getPaintProperty(patch.layerId, prop));
     }
-    map.setPaintProperty(patch.layerId, prop as never, value as never);
+    map.setPaintProperty(patch.layerId, prop, value);
   }
 }
 
@@ -30,7 +30,7 @@ export function revertPatch(map: MapLibreMap, patch: BasemapPatch): void {
   for (const prop of Object.keys(patch.paint)) {
     const key = `${patch.layerId}::${prop}`;
     if (originals.has(key)) {
-      map.setPaintProperty(patch.layerId, prop as never, originals.get(key) as never);
+      map.setPaintProperty(patch.layerId, prop, originals.get(key));
       originals.delete(key);
     }
   }
