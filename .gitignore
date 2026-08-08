@@ -1,0 +1,38 @@
+# Brainstorming companion sessions (local mockups, not project source)
+.superpowers/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+
+# Env — STM_API_KEY and friends live here, never in git
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# Test output
+coverage/
+playwright-report/
+test-results/
+
+# Misc
+.DS_Store
+*.pem
+npm-debug.log*
+yarn-error.log*
+.turbo
+next-env.d.ts
+
+# Large local datasets (e.g. 2.2GB GML city models) — never commit
+data/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+.env*
