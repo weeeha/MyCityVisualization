@@ -52,3 +52,66 @@ def triangulate_surface(rings, verts):
     if len(tri) == 0:
         return [], "earcut_empty"
     return [flat[t].tolist() for t in np.asarray(tri).reshape(-1, 3)], None
+
+
+# Task 3: Tile converter with skip gate
+import json
+from pathlib import Path
+
+import trimesh
+
+from scripts.pipeline.config import SKIP_RATE_MAX
+
+
+class PipelineError(RuntimeError):
+    pass
+
+
+def convert_tile(geom_json, glb_out):
+    geom_json, glb_out = Path(geom_json), Path(glb_out)
+    d = json.loads(geom_json.read_text())
+    tr = d["transform"]
+    verts = np.asarray(d["vertices"], float) * tr["scale"] + tr["translate"]
+
+    ext = d["metadata"]["geographicalExtent"]
+    anchor = np.array([ext[0], ext[1], ext[2]])
+    local = verts - anchor
+    local = np.column_stack([local[:, 0], local[:, 2], -local[:, 1]])  # Y-up
+
+    skipped = {"degenerate_ring": 0, "no_normal": 0, "earcut_empty": 0}
+    surfaces = 0
+    meshes = {}
+    for oid, obj in d["CityObjects"].items():
+        faces = []
+        for geom in obj.get("geometry", []):
+            shells = geom["boundaries"] if geom["type"] == "Solid" else [geom["boundaries"]]
+            for shell in shells:
+                for surface in shell:
+                    surfaces += 1
+                    tri, skip = triangulate_surface(surface, local)
+                    if skip:
+                        skipped[skip] += 1
+                    else:
+                        faces.extend(tri)
+        if faces:
+            m = trimesh.Trimesh(vertices=local, faces=np.asarray(faces), process=True)
+            m.fix_normals()
+            meshes[str(oid)] = m
+
+    rate = (sum(skipped.values()) / surfaces) if surfaces else 0.0
+    if rate > SKIP_RATE_MAX:
+        raise PipelineError(
+            f"{geom_json.name}: skip rate {rate:.1%} exceeds {SKIP_RATE_MAX:.0%} ({skipped})")
+
+    glb_out.parent.mkdir(parents=True, exist_ok=True)
+    trimesh.Scene(meshes).export(glb_out)
+    return {
+        "tile": geom_json.stem.split("_")[0],
+        "buildings": len(meshes),
+        "triangles": int(sum(len(m.faces) for m in meshes.values())),
+        "skipped": skipped,
+        "surfaces": surfaces,
+        "skip_rate": rate,
+        "anchor_mtm8": anchor.tolist(),
+        "glb_bytes": glb_out.stat().st_size,
+    }
