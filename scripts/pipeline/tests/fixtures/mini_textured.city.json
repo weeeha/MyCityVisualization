@@ -1,0 +1,13 @@
+{"type":"CityJSON","version":"2.0","appearance":{"textures":[{"type":"JPG","image":"appearance/x.jpg"}]},
+ "transform":{"scale":[1.0,1.0,1.0],"translate":[0.0,0.0,0.0]},
+ "metadata":{"geographicalExtent":[0.0,0.0,0.0,7.0,2.0,3.0]},
+ "vertices":[[0,0,0],[2,0,0],[2,2,0],[0,2,0],[0,0,3],[2,0,3],[2,2,3],[0,2,3],
+             [5,0,0],[7,0,0],[7,2,0],[5,2,0],[5,0,3],[7,0,3],[7,2,3],[5,2,3]],
+ "CityObjects":{
+  "B1":{"type":"Building","attributes":{"measuredHeight":3.0,"Volume":12.0,"parcelle":"P-1"},
+    "geometry":[{"type":"Solid","lod":"2","texture":{"rhinocity":{"values":[[[0]]]}},
+      "boundaries":[[
+      [[3,2,1,0]],[[4,5,6,7]],[[0,1,5,4]],[[1,2,6,5]],[[2,3,7,6]],[[3,0,4,7]]]]}]},
+  "B2":{"type":"Building","attributes":{"measuredHeight":3.0,"Volume":12.0,"parcelle":" "},
+    "geometry":[{"type":"Solid","lod":"2","boundaries":[[
+      [[11,10,9,8]],[[12,13,14,15]],[[8,9,9,13,12,8]],[[9,10,14,13]],[[10,11,15,14]],[[11,8,12,15]],[[8,9,8]]]]}]}}}
