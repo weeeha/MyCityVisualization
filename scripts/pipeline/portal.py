@@ -1,5 +1,6 @@
 import subprocess
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -26,6 +27,10 @@ def resolve_signed_url(url):
     except urllib.error.HTTPError as e:
         loc = e.headers.get("Location")
         if e.code in (301, 302, 303, 307, 308) and loc:
+            host = urllib.parse.urlsplit(loc).hostname or ""
+            if not host.endswith("storage.googleapis.com"):
+                raise PipelineError(
+                    f"signed-URL redirect host {host!r} is not storage.googleapis.com: {loc}")
             return loc
         raise PipelineError(f"no signed-URL redirect from {url}: HTTP {e.code}")
     except (urllib.error.URLError, TimeoutError) as e:
@@ -40,15 +45,17 @@ def verify_size(path, expected):
 
 def download(url, dest, expected_size=None):
     dest = Path(dest)
-    if expected_size and dest.exists() and dest.stat().st_size == expected_size:
+    if expected_size is not None and dest.exists() and dest.stat().st_size == expected_size:
         return
     dest.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(
-        ["curl", "-fSL", "-C", "-", "--retry", "3", "-o", str(dest), url],
+        ["curl", "-fSL", "-C", "-", "--retry", "3",
+         "--max-time", "14400", "--speed-limit", "1024", "--speed-time", "60",
+         "-o", str(dest), url],
         capture_output=True, text=True)
     if r.returncode != 0:
         raise PipelineError(f"download failed: {r.stderr[-300:]}")
-    if expected_size:
+    if expected_size is not None:
         verify_size(dest, expected_size)
 
 

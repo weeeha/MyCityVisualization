@@ -113,5 +113,6 @@ def convert_tile(geom_json, glb_out):
         "surfaces": surfaces,
         "skip_rate": rate,
         "anchor_mtm8": anchor.tolist(),
+        "extent": ext,
         "glb_bytes": glb_out.stat().st_size,
     }

@@ -33,24 +33,34 @@ def test_extent_wgs84_corners_reproject_and_order():
 
 
 def test_manifest_schema():
+    # reports now carry their own `extent` (F5) — no separate extents map
     reports = [
         {"tile": "VM06", "buildings": 243, "triangles": 82627,
-         "skipped": {}, "surfaces": 64110, "skip_rate": 0.01,
-         "anchor_mtm8": [300462.96875, 5040621.0, 6.579621], "glb_bytes": 1},
+         "skipped": {}, "surfaces": 64110, "skip_rate": 0.0107,
+         "anchor_mtm8": [300462.96875, 5040621.0, 6.579621], "glb_bytes": 1,
+         "extent": [300462.9, 5040621.0, 6.5, 301558.2, 5043559.0, 87.3]},
         {"tile": "VM01", "buildings": 100, "triangles": 40000,
-         "skipped": {}, "surfaces": 30000, "skip_rate": 0.01,
-         "anchor_mtm8": [300500.0, 5041000.0, 5.0], "glb_bytes": 1},
+         "skipped": {}, "surfaces": 30000, "skip_rate": 0.02,
+         "anchor_mtm8": [300500.0, 5041000.0, 5.0], "glb_bytes": 1,
+         "extent": [300500.0, 5041000.0, 5.0, 301500.0, 5042000.0, 50.0]},
     ]
-    extents = {
-        "VM06": [300462.9, 5040621.0, 6.5, 301558.2, 5043559.0, 87.3],
-        "VM01": [300500.0, 5041000.0, 5.0, 301500.0, 5042000.0, 50.0],
-    }
-    m = build_manifest(reports, extents)
+    m = build_manifest(reports)
+
     assert [t["id"] for t in m["tiles"]] == ["VM01", "VM06"]
     t = m["tiles"][1]
     assert t["path"] == "/tiles/buildings/vm/VM06_2020.glb"
+    assert t["attributesPath"] == "/tiles/buildings/vm/VM06_attributes.json"
     assert len(t["anchor"]) == 2 and len(t["extentWgs84"]) == 4
+    assert isinstance(t["skipRate"], float) and t["skipRate"] == 0.0107
+
     assert m["license"] == "CC-BY-4.0" and m["crsSource"] == "EPSG:2950"
+    assert m["axis"] == "Y_UP"
+    assert "meters from anchorMtm8" in m["originRule"]
+    assert m["hasNormals"] is False
+    assert m["source"] == {
+        "dataset": "batiments-3d-2020-maquette-lod2-avec-textures",
+        "resource": "7bff216d-bf3f-4c90-8677-2aceca08a360",
+    }
 
 
 def test_attributes_sidecar(tmp_path):
