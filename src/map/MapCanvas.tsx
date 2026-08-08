@@ -73,5 +73,17 @@ export default function MapCanvas({
     if (map.isStyleLoaded()) run(); else map.once('load', run);
   }, [patches]);
 
-  return <div ref={container} className="absolute inset-0" data-testid="map-canvas" />;
+  // Inline position/inset (not just the Tailwind classes) because
+  // maplibre-gl.css ships `.maplibregl-map { position: relative }` and,
+  // loaded via dynamic import, its stylesheet lands after Tailwind's in the
+  // cascade — same specificity, so it silently wins and collapses this
+  // container to zero height. Inline styles always beat a stylesheet rule.
+  return (
+    <div
+      ref={container}
+      className="absolute inset-0"
+      style={{ position: 'absolute', inset: 0 }}
+      data-testid="map-canvas"
+    />
+  );
 }
