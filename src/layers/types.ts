@@ -88,3 +88,9 @@ export interface LayerManifest<TData, TFeature> {
 
   budget: { mobile: 'full' | 'reduced' | 'off' };
 }
+
+// The registry is heterogeneous: each layer has its own data and feature types.
+// `any` is deliberate here — `unknown` or a union breaks every call site that
+// needs to treat manifests polymorphically (registry, toggles, data loading).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyLayerManifest = LayerManifest<any, any>;

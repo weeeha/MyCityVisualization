@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Gitignored, vendored/generated local content — never project source
+    // (see .gitignore: "Large local datasets ... never commit").
+    "data/**",
   ]),
 ]);
 

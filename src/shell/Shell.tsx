@@ -1,26 +1,47 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import { registry } from '@/src/layers/registry';
 import { MONTREAL } from '@/src/cities/montreal';
 import type { LayerContext, LayerStatus, ViewState } from '@/src/layers/types';
-import { DEFAULT_URL_STATE, parseUrlState, toSearchParams } from './useUrlState';
+import { parseUrlState, toSearchParams, type UrlState } from './useUrlState';
 import { IDLE, useLayersData } from './useLayersData';
 import LayerToggles from './LayerToggles';
 
 // ~400 KB gzipped — must not block first paint.
 const MapCanvas = dynamic(() => import('@/src/map/MapCanvas'), { ssr: false });
 
+// The URL is the single source of truth for shell state — there is no
+// separate React state to desync from it. useSyncExternalStore reads
+// window.location.search directly; the empty server snapshot parses to
+// DEFAULT_URL_STATE (see useUrlState.test.ts), so hydration matches.
+// window.history.replaceState() does not fire 'popstate' on its own, so our
+// own writes dispatch a matching synthetic event alongside real browser
+// back/forward navigation — both funnel through the same subscription.
+const URL_CHANGE_EVENT = 'shell:urlchange';
+
+function subscribeToUrl(onStoreChange: () => void) {
+  window.addEventListener('popstate', onStoreChange);
+  window.addEventListener(URL_CHANGE_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener('popstate', onStoreChange);
+    window.removeEventListener(URL_CHANGE_EVENT, onStoreChange);
+  };
+}
+
+const getUrlSnapshot = () => window.location.search;
+const getServerUrlSnapshot = () => '';
+
 export default function Shell() {
-  const [urlState, setUrlState] = useState(DEFAULT_URL_STATE);
+  const search = useSyncExternalStore(subscribeToUrl, getUrlSnapshot, getServerUrlSnapshot);
+  const urlState = useMemo(() => parseUrlState(search), [search]);
 
-  useEffect(() => { setUrlState(parseUrlState(window.location.search)); }, []);
-
-  useEffect(() => {
-    const qs = toSearchParams(urlState).toString();
+  const writeUrlState = useCallback((next: UrlState) => {
+    const qs = toSearchParams(next).toString();
     window.history.replaceState(null, '', `?${qs}`);
-  }, [urlState]);
+    window.dispatchEvent(new Event(URL_CHANGE_EVENT));
+  }, []);
 
   const ctx: LayerContext = useMemo(() => ({
     city: MONTREAL,
@@ -45,11 +66,13 @@ export default function Shell() {
     registry.map((m) => [m.id, stateOf(m.id).status]),
   ) as Record<string, LayerStatus>;
 
-  const setView = (view: ViewState) => setUrlState((s) => ({ ...s, view }));
-  const toggle = (id: string) => setUrlState((s) => ({
-    ...s,
-    layers: s.layers.includes(id) ? s.layers.filter((x) => x !== id) : [...s.layers, id],
-  }));
+  const setView = (view: ViewState) => writeUrlState({ ...urlState, view });
+  const toggle = (id: string) => writeUrlState({
+    ...urlState,
+    layers: urlState.layers.includes(id)
+      ? urlState.layers.filter((x) => x !== id)
+      : [...urlState.layers, id],
+  });
 
   return (
     <main className="fixed inset-0 bg-slate-950 text-white">

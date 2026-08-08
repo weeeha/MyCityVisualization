@@ -1,6 +1,6 @@
 'use client';
 
-import type { LayerManifest, LayerStatus } from '@/src/layers/types';
+import type { AnyLayerManifest, LayerStatus } from '@/src/layers/types';
 
 const DOT: Record<LayerStatus, string> = {
   idle: 'bg-slate-500', loading: 'bg-sky-400 animate-pulse',
@@ -10,7 +10,7 @@ const DOT: Record<LayerStatus, string> = {
 export default function LayerToggles({
   layers, enabled, statuses, onToggle,
 }: {
-  layers: LayerManifest<any, any>[];
+  layers: AnyLayerManifest[];
   enabled: string[];
   statuses: Record<string, LayerStatus>;
   onToggle: (id: string) => void;

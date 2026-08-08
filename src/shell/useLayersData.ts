@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { LayerContext, LayerManifest, LayerState } from '@/src/layers/types';
+import type { AnyLayerManifest, LayerContext, LayerState } from '@/src/layers/types';
 
 export const IDLE: LayerState<unknown> = {
   status: 'idle', data: null, asOf: null, error: null,
 };
 
 export function useLayersData(
-  manifests: LayerManifest<any, any>[],
+  manifests: AnyLayerManifest[],
   ctx: LayerContext,
   enabled: string[],
-): Record<string, LayerState<any>> {
-  const [states, setStates] = useState<Record<string, LayerState<any>>>({});
+): Record<string, LayerState<unknown>> {
+  const [states, setStates] = useState<Record<string, LayerState<unknown>>>({});
   const enabledKey = [...enabled].sort().join(',');
 
   // ctx is deliberately NOT a dependency: it changes on every pan, and
