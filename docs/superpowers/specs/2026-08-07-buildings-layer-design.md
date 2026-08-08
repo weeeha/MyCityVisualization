@@ -16,7 +16,7 @@ A `buildings` layer for MyCityVisualization showing the **official Ville de Mont
 - **No textures.** The pipeline preserves the textured CityJSON on disk; a "photo mode" is a later, additive project.
 - **No per-building picking / detail cards.** Arrives with a 3D-Tiles or custom-layer upgrade (the glbs already carry one named node per building so that upgrade reuses this pipeline).
 - **No 2020 CDN-NDG/Outremont, no 2016 boroughs.** Ville-Marie first; other boroughs are a pipeline re-run plus an assets-hosting decision (§4), not a design change.
-- **No data-driven coloring yet** (building age/energy/etc.). The attributes (`measuredHeight`, `Volume`, `parcelle`, gml id) survive into the tiles manifest for that future.
+- **No data-driven coloring yet** (building age/energy/etc.). The attributes (`measuredHeight`, `Volume`, `parcelle`, gml id) survive into the tiles manifest for that future — though in the 2020 VM data `parcelle` is whitespace-only on every shipped building; only `measuredHeight`, `Volume`, and the gml id are usable until a future dataset populates it.
 
 ## 2. Source data
 
@@ -35,7 +35,7 @@ A `buildings` layer for MyCityVisualization showing the **official Ville de Mont
 
 Five deterministic, individually re-runnable steps. Raw and intermediate artifacts live under gitignored `data/`; only final web assets and the manifest leave it.
 
-1. **fetch** — resolve CKAN resource → signed GCS URL → download with resume + size verification against `Content-Length`; unpack nested per-tile zips.
+1. **fetch** — resolve CKAN resource → signed GCS URL → download with resume + size verification against frozen expected sizes (stronger than trusting the live `Content-Length`: a republished/tampered dataset surfaces as a size-mismatch error, not a silent swap); unpack nested per-tile zips.
 2. **to-cityjson** — citygml-tools 2.5.0 (Java 26 via Homebrew), `to-cityjson`. Output: `<tile>.json` (textured CityJSON, kept as the photo-mode source of truth).
 3. **strip** — remove `appearance` and per-geometry `texture`/`material` → `<tile>.geom.json`.
 4. **glb** — the converter proven in the spike (promoted to `scripts/pipeline/cityjson_to_glb.py`): clean rings (drop consecutive duplicates and closing repeats), skip sub-3-vertex rings and zero-normal surfaces **with counts reported**, Newell-basis projection, mapbox-earcut triangulation with holes, one named `trimesh` node per building (name = CityGML building id), recenter to tile min-corner, Y-up axis swap. Fails that tile's run if its skip rate exceeds 2% of surfaces — loud, not silent.
@@ -78,7 +78,7 @@ Conforms to `src/layers/types.ts` as of commit `f006355`:
 
 ## 8. Phasing & coordination
 
-- **Phase A (now):** pipeline scripts + six VM glbs + manifest + pytest suite, on branch `buildings-pipeline` (based off `main`; touches only `scripts/`, `docs/`, `public/tiles/`, gitignored `data/` — zero-conflict merge by construction). Work is committed via a linked worktree so the shared working tree (live on `design/foundation` with another active session) is never switched or disturbed.
+- **Phase A (now):** pipeline scripts + six VM glbs + manifest + pytest suite, on branch `buildings-pipeline` (based off `main`; touches only `scripts/`, `docs/`, `public/tiles/`, gitignored `data/`, plus a `.gitignore` whose add/add union-merge with `design/foundation` is trivial). Work is committed via a linked worktree so the shared working tree (live on `design/foundation` with another active session) is never switched or disturbed.
 - **Phase B (after the app session's Plan 1 lands):** implement `src/layers/buildings/` per §5, register in the registry, Playwright e2e, Vercel preview link.
 - Nothing is pushed to any remote, and no PR is opened, without explicit go-ahead. Nothing in this workstream ever commits to `design/foundation` or `main` directly.
 
