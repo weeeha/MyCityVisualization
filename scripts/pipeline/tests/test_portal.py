@@ -63,10 +63,10 @@ def _find_free_port():
 
 
 def test_resolve_signed_url_302_with_location():
-    """Test 302 redirect with Location header returns the location."""
+    """Test 302 redirect with a compliant GCS Location header returns the location."""
     port = _find_free_port()
     _TestHandler.response_code = 302
-    _TestHandler.response_location = "https://storage.googleapis.com/signed/url"
+    _TestHandler.response_location = "https://montreal-prod.storage.googleapis.com/x.zip"
 
     server = http.server.HTTPServer(("127.0.0.1", port), _TestHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -75,7 +75,26 @@ def test_resolve_signed_url_302_with_location():
     try:
         url = f"http://127.0.0.1:{port}/test"
         result = resolve_signed_url(url)
-        assert result == "https://storage.googleapis.com/signed/url"
+        assert result == "https://montreal-prod.storage.googleapis.com/x.zip"
+    finally:
+        server.shutdown()
+
+
+def test_resolve_signed_url_302_to_untrusted_host_raises():
+    """A redirect that isn't to storage.googleapis.com must be rejected, not followed."""
+    port = _find_free_port()
+    _TestHandler.response_code = 302
+    _TestHandler.response_location = "https://evil.example.com/x.zip"
+
+    server = http.server.HTTPServer(("127.0.0.1", port), _TestHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    try:
+        url = f"http://127.0.0.1:{port}/test"
+        with pytest.raises(PipelineError) as exc_info:
+            resolve_signed_url(url)
+        assert "storage.googleapis.com" in str(exc_info.value)
     finally:
         server.shutdown()
 
