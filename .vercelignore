@@ -1,0 +1,24 @@
+# Vercel does NOT read .gitignore when uploading a deployment.
+# Without this file the CLI tries to upload data/ (a ~2.8GB local GML dataset)
+# and the request is rejected as too large.
+
+# Large local datasets — never part of a deployment
+data/
+
+# Local planning/agent artifacts
+.superpowers/
+
+# Docs and specs — not needed at runtime
+docs/
+
+# Test-only assets
+e2e/
+fixtures/
+test-results/
+playwright-report/
+playwright.config.ts
+
+# Build/dev noise
+node_modules/
+.next/
+*.tsbuildinfo
