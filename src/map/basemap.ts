@@ -9,6 +9,11 @@ export const BUILDING_LAYER_ID = 'building-3d';
 
 const originals = new Map<string, unknown>();
 
+/** Test-only cache reset. */
+export function __resetBasemapCache() {
+  originals.clear();
+}
+
 export function applyPatch(map: MapLibreMap, patch: BasemapPatch): void {
   if (!map.getLayer(patch.layerId)) return;
   for (const [prop, value] of Object.entries(patch.paint)) {
