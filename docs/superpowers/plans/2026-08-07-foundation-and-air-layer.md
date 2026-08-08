@@ -34,22 +34,39 @@
 - Consumes: nothing
 - Produces: a working `npm test`, `npm run dev`, `npm run build`
 
-- [ ] **Step 1: Scaffold Next.js in place**
+- [ ] **Step 1: Scaffold Next.js via a temp directory**
 
-The repo root already contains `README.md`, `.gitignore`, and `docs/`. Scaffold into it:
-
-```bash
-npx create-next-app@latest . --typescript --app --tailwind --eslint \
-  --src-dir=false --import-alias "@/*" --turbopack --no-git --yes
-```
-
-If it refuses because the directory is non-empty, scaffold to a temp dir and copy in:
+The repo root already contains `README.md`, `.gitignore`, and `docs/`. Scaffold to a temp
+directory and copy in, so nothing already committed is destroyed:
 
 ```bash
+rm -rf /tmp/mcv-scaffold
 npx create-next-app@latest /tmp/mcv-scaffold --typescript --app --tailwind \
   --eslint --src-dir=false --import-alias "@/*" --turbopack --no-git --yes
-rsync -a --exclude .git --exclude README.md /tmp/mcv-scaffold/ .
+rsync -a --exclude .git --exclude README.md --exclude .gitignore \
+  /tmp/mcv-scaffold/ .
 ```
+
+**Do not scaffold in place, and do not drop the `--exclude .gitignore`.**
+`create-next-app` writes its own `.gitignore`, which would overwrite the committed one and
+silently un-ignore `.superpowers/` (the SDD ledger and brainstorm mockups). The committed
+`.gitignore` already covers everything Next.js needs: `node_modules/`, `.next/`, `out/`,
+`build/`, `.env*`, `.vercel`, `next-env.d.ts`.
+
+`--src-dir=false` is deliberate: Next.js owns `app/` at the repo root, while `src/` holds
+framework-independent code (`src/map`, `src/shell`, `src/layers`, `src/cities`). The `@/*`
+alias resolves from the repo root, so `@/src/layers/types` is the correct import form.
+
+- [ ] **Step 1b: Verify the scaffold did not clobber committed files**
+
+```bash
+git status --short
+grep -q '.superpowers/' .gitignore && echo "gitignore OK" || echo "GITIGNORE CLOBBERED"
+```
+
+Expected: `gitignore OK`, and `.superpowers/` must **not** appear in `git status`.
+If it says `GITIGNORE CLOBBERED`, restore it with `git checkout -- .gitignore` before
+continuing.
 
 - [ ] **Step 2: Install runtime and test dependencies**
 
