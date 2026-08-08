@@ -33,3 +33,5 @@ next-env.d.ts
 
 # Large local datasets (e.g. 2.2GB GML city models) — never commit
 data/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
