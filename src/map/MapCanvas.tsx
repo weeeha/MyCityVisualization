@@ -25,6 +25,16 @@ export default function MapCanvas({
   const mapRef = useRef<MapLibreMap | null>(null);
   const overlayRef = useRef<MapboxOverlay | null>(null);
 
+  // Refreshed every render so the mount-only effect below never closes over
+  // a stale callback. Deliberately NOT a dependency of that effect — adding
+  // it there would tear down and rebuild the whole map on every render.
+  // Written from an effect (not directly in the render body) per
+  // react-hooks/refs — ref writes belong in effects/handlers, not render.
+  const onViewStateChangeRef = useRef(onViewStateChange);
+  useEffect(() => {
+    onViewStateChangeRef.current = onViewStateChange;
+  });
+
   // Mount once. viewState is deliberately not a dependency —
   // the map owns the camera after init; the URL is synced from move events.
   useEffect(() => {
@@ -69,7 +79,10 @@ export default function MapCanvas({
 
     map.on('moveend', () => {
       const c = map.getCenter();
-      onViewStateChange({
+      // Call through the ref, not the closed-over prop — the prop from this
+      // mount-only effect's first render would otherwise stay wired
+      // forever, writing that render's stale urlState back on every pan.
+      onViewStateChangeRef.current({
         longitude: c.lng, latitude: c.lat,
         zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing(),
       });
