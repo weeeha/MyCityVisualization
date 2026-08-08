@@ -1,4 +1,5 @@
 import subprocess
+import urllib.error
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -27,6 +28,8 @@ def resolve_signed_url(url):
         if e.code in (301, 302, 303, 307, 308) and loc:
             return loc
         raise PipelineError(f"no signed-URL redirect from {url}: HTTP {e.code}")
+    except (urllib.error.URLError, TimeoutError) as e:
+        raise PipelineError(f"cannot reach portal: {url}: {e}")
 
 
 def verify_size(path, expected):
