@@ -36,3 +36,5 @@ data/
 tsconfig.tsbuildinfo
 *.tsbuildinfo
 .env*
+__pycache__/
+*.pyc
