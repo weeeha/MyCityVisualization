@@ -66,13 +66,23 @@ export default function Shell() {
     registry.map((m) => [m.id, stateOf(m.id).status]),
   ) as Record<string, LayerStatus>;
 
-  const setView = (view: ViewState) => writeUrlState({ ...urlState, view });
-  const toggle = (id: string) => writeUrlState({
-    ...urlState,
-    layers: urlState.layers.includes(id)
-      ? urlState.layers.filter((x) => x !== id)
-      : [...urlState.layers, id],
-  });
+  // Read the URL fresh at call time rather than closing over the render's
+  // `urlState`. MapCanvas's moveend handler and this toggle can both fire
+  // after a stale render — a closure-captured snapshot from either would
+  // silently overwrite whatever the other one wrote since. Reading
+  // window.location.search live makes each write a delta on top of
+  // whatever is actually there right now, not a snapshot from render time.
+  const setView = (view: ViewState) =>
+    writeUrlState({ ...parseUrlState(window.location.search), view });
+  const toggle = (id: string) => {
+    const current = parseUrlState(window.location.search);
+    writeUrlState({
+      ...current,
+      layers: current.layers.includes(id)
+        ? current.layers.filter((x) => x !== id)
+        : [...current.layers, id],
+    });
+  };
 
   return (
     <main className="fixed inset-0 bg-slate-950 text-white">

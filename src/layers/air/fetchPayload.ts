@@ -22,7 +22,10 @@ export async function fetchAirPayload(
     const res = await fetchImpl(SOURCE_URL);
     if (!res.ok) throw new Error(`upstream responded ${res.status}`);
     const payload = normaliseRsqaCsv(await res.text());
-    lastGood = payload;
+    // A successful-but-empty response (e.g. upstream serves a header-only
+    // CSV) must not clobber the stale-fallback net — only cache a payload
+    // that actually has stations to fall back to.
+    if (payload.stations.length > 0) lastGood = payload;
     return payload;
   } catch (err) {
     if (lastGood) return { ...lastGood, stale: true };

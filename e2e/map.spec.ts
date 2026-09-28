@@ -46,6 +46,34 @@ test('the air layer toggles and shows its legend', async ({ page }) => {
   await expect(page).toHaveURL(/layers=(&|$)/);
 });
 
+test('a toggled-off layer stays off after a subsequent pan (regression)', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('legend-air')).toBeVisible();
+
+  // Turn the air layer off and confirm the URL reflects it immediately.
+  await page.getByTestId('toggle-air').click();
+  await expect(page.getByTestId('legend-air')).toHaveCount(0);
+  await expect(page).toHaveURL(/layers=(&|$)/);
+
+  // Pan the map via the keyboard (drag gestures were previously found
+  // unreliable in automation here) so a real 'moveend' fires, then wait
+  // for the URL to pick up the new camera position before asserting.
+  const canvas = page.locator('canvas').first();
+  await canvas.click();
+  const urlBeforePan = page.url();
+  for (let i = 0; i < 5; i += 1) {
+    await page.keyboard.press('ArrowRight');
+  }
+  await expect(async () => {
+    expect(page.url()).not.toBe(urlBeforePan);
+  }).toPass({ timeout: 10_000 });
+
+  // The pan's moveend handler must not resurrect the layer that was
+  // toggled off before it — it silently did, prior to the fix.
+  await expect(page).toHaveURL(/layers=(&|$)/);
+  await expect(page.getByTestId('legend-air')).toHaveCount(0);
+});
+
 test('a shared URL restores the exact view', async ({ page }) => {
   await page.goto('/?layers=air&at=45.5088,-73.5678,15,60,-20');
   await page.waitForTimeout(3000);

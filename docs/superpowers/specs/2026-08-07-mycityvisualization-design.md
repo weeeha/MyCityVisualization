@@ -96,9 +96,12 @@ fixtures/                     captured real API responses — tests + offline de
 Nothing in `src/map` or `src/shell` may import from `src/layers/<name>` — only from
 `registry.ts` and `types.ts`.
 
-**Acceptance test:** delete any layer folder, remove its line from the registry, and the
-app still builds and runs, minus that toggle. Enforced in CI by an ESLint
-`no-restricted-imports` rule, so it fails on push rather than in review.
+**Acceptance test:** delete any layer's `src/layers/<id>/` folder AND its
+`app/api/layers/<id>/` route, remove its line from the registry, and the app still
+builds and runs, minus that toggle. A layer owns its full vertical slice, route handler
+included — deleting only the `src/layers/<id>/` folder leaves the build broken, since its
+route still imports from it. Enforced in CI by an ESLint `no-restricted-imports` rule, so
+it fails on push rather than in review.
 
 ---
 
