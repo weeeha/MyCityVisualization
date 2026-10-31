@@ -1,5 +1,13 @@
 # MyCityVisualization
 
+**Problem.** City open data, such as Montréal's RSQA air quality readings, arrives as CSV tables with no spatial view of the city it describes.
+
+**Idea.** One 3D map with pluggable data layers. Each layer is a manifest registered in a single file and never imports another layer, so a new layer is one registry entry and a second city is one config file.
+
+**Built.** A Next.js app with deck.gl layers over a MapLibre basemap with 3D building extrusions, one city (Montréal) and one live layer (air quality), plus a Python pipeline that converts the city's CityGML building data to glb tiles. Live at https://mycity-pied.vercel.app. 38 commits on 6 days, Aug 7 to Oct 20, 2026.
+
+**Decision.** The map uses OpenFreeMap vector tiles with the app's own building layer instead of Google's Photorealistic 3D Tiles. Those look better, but they are a mesh with no per-building attributes, which would rule out a buildings-as-data layer.
+
 A multi-layer city data map. deck.gl layers render over a dark MapLibre basemap with 3D building extrusions. One city so far (Montréal) and one data layer (air quality, from the City of Montréal RSQA monitoring network).
 
 ![Montréal map with the air quality layer showing station readings](docs/screenshots/overview.webp)
